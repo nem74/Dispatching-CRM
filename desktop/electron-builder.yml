@@ -1,0 +1,30 @@
+
+appId: com.lanecove.desktop
+productName: LaneCove
+
+directories:
+  output: release
+
+files:
+  - main.cjs
+  - package.json
+
+extraResources:
+  - from: ../dist/lanecove-backend
+    to: backend
+  - from: ../database/schema.sql
+    to: database/schema.sql
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: LaneCove-Setup.${ext}
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: LaneCove

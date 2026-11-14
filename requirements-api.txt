@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+psycopg[binary]
+argon2-cffi
+python-dotenv
+pandas
+requests
+pydantic

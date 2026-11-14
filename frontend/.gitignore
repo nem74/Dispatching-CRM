@@ -1,0 +1,38 @@
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Python packaging
+build/
+dist/
+*.spec
+
+# Node dependencies
+node_modules/
+
+# Electron output
+desktop/release/
+
+# Development data and database backups
+data/
+*.dump
+*.backup
+*.sqlite3
+*.db
+
+# Private keys
+*.pem
+*.p12
+*.pfx
+
+# Logs
+*.log

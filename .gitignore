@@ -1,0 +1,69 @@
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Node and React
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+
+# Local databases and backups
+data/
+*.db
+*.sqlite3
+*.dump
+*.backup
+
+# Logs and private keys
+*.log
+*.pem
+*.key
+*.p12
+
+# Editor and OS files
+.DS_Store
+.vscode/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+build/
+dist/
+
+# Node and Electron
+node_modules/
+frontend/dist/
+desktop/release/
+
+# Database: only include the empty schema
+database/*
+!database/schema.sql
+
+# Logs and local data
+*.log
+*.dump
+*.backup
+*.sqlite3
+*.db
+*.pem
+*.p12
+*.pfx
+
+.streamlit/

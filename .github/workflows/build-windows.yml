@@ -1,0 +1,103 @@
+
+name: Build LaneCove Windows Installer
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build Windows 11 Installer
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check packaging inputs
+        shell: pwsh
+        run: |
+          $required = @(
+            "api.py",
+            "backend_launcher.py",
+            "auth_security.py",
+            "first_run.py",
+            "db_access.py",
+            "carrier_search.py",
+            "database/schema.sql",
+            "frontend/package.json",
+            "frontend/package-lock.json",
+            "desktop/package.json",
+            "desktop/package-lock.json",
+            "desktop/main.cjs",
+            "desktop/electron-builder.yml"
+          )
+
+          foreach ($file in $required) {
+            if (-not (Test-Path $file)) {
+              throw "Missing required file: $file"
+            }
+          }
+
+          if (Test-Path ".env") {
+            throw "A private .env file was included in the repository."
+          }
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build React frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Install Python dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-api.txt
+          python -m pip install "psycopg[binary]" "argon2-cffi" "uvicorn" "python-dotenv" "pyinstaller"
+
+      - name: Package FastAPI backend
+        shell: pwsh
+        run: |
+          python -m PyInstaller --noconfirm --clean --onedir --name lanecove-backend --collect-all uvicorn --collect-all psycopg --collect-all psycopg_binary --add-data "frontend/dist;frontend/dist" backend_launcher.py
+
+      - name: Verify backend package
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/lanecove-backend/lanecove-backend.exe")) {
+            throw "Windows backend executable was not generated."
+          }
+
+      - name: Install desktop dependencies
+        working-directory: desktop
+        run: npm ci
+
+      - name: Build Electron installer
+        working-directory: desktop
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: |
+          npx electron-builder --win nsis --x64 --publish never
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: LaneCove-Windows-Installer
+          path: desktop/release/*.exe
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,266 @@
+
+/* ==================================
+   SILVANNE LOGIN SCREEN
+================================== */
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: #f5f7fa;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.auth-container {
+  width: 100%;
+  max-width: 430px;
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 36px;
+}
+
+.auth-logo {
+  width: 47px;
+  height: 47px;
+  background: #172033;
+  color: #fff;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+}
+
+.auth-brand strong {
+  display: block;
+  font-size: 22px;
+  color: #172033;
+  font-weight: 800;
+}
+
+.auth-brand small {
+  display: block;
+  margin-top: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #8490a1;
+}
+
+.auth-card {
+  background: #fff;
+  border: 1px solid #e8edf3;
+  border-radius: 20px;
+  padding: 38px;
+  box-shadow: 0 12px 40px rgba(30, 42, 60, 0.04);
+}
+
+.auth-lock {
+  width: 47px;
+  height: 47px;
+  display: grid;
+  place-items: center;
+  background: #f0f3f7;
+  color: #34455e;
+  border-radius: 13px;
+  margin-bottom: 23px;
+}
+
+.auth-card h1 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 800;
+  color: #1d2839;
+}
+
+.auth-subtitle {
+  font-size: 13px;
+  line-height: 1.7;
+  color: #8a96a7;
+  margin-bottom: 30px;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #46536a;
+}
+
+.auth-card input {
+  width: 100%;
+  height: 46px;
+  border: 1px solid #dfe5ed;
+  border-radius: 10px;
+  padding: 0 14px;
+  outline: none;
+  font-family: inherit;
+  font-size: 13px;
+  color: #263246;
+  background: white;
+}
+
+.auth-card input:focus {
+  border-color: #7d91ac;
+  box-shadow: 0 0 0 3px rgba(85, 110, 148, 0.1);
+}
+
+.auth-card input::placeholder {
+  color: #a7b0bc;
+}
+
+.auth-password-wrap {
+  position: relative;
+}
+
+.auth-password-wrap input {
+  padding-right: 48px;
+}
+
+.auth-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: 0;
+  color: #8895a6;
+  display: grid;
+  place-items: center;
+  padding: 4px;
+}
+
+.auth-submit {
+  width: 100%;
+  height: 47px;
+  border: 0;
+  border-radius: 10px;
+  background: #172033;
+  color: white;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 6px;
+}
+
+.auth-submit:hover {
+  background: #2c3a52;
+}
+
+.auth-submit:disabled {
+  opacity: 0.65;
+}
+
+.auth-security-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid #edf0f4;
+  color: #8390a1;
+  font-size: 11px;
+}
+
+.auth-security-note svg {
+  color: #4c916d;
+}
+
+.auth-error {
+  padding: 12px 14px;
+  background: #fff1f1;
+  color: #a93838;
+  border-radius: 9px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.auth-footer {
+  margin-top: 28px;
+  text-align: center;
+  color: #a0a9b6;
+  font-size: 11px;
+}
+
+.auth-loading {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #57657a;
+  background: #f5f7fa;
+}
+
+.auth-loading p {
+  font-size: 13px;
+}
+
+/* ==================================
+   LOGOUT BUTTON
+================================== */
+
+.auth-signout {
+  position: fixed;
+  right: 25px;
+  bottom: 22px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 12px 18px;
+  border: 1px solid #dfe5ed;
+  border-radius: 12px;
+  background: #fff;
+  color: #34435b;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 4px 20px rgba(27, 40, 60, 0.09);
+}
+
+.auth-signout:hover {
+  background: #f3f5f8;
+}
+
+.auth-logout-error {
+  position: fixed;
+  right: 25px;
+  bottom: 80px;
+  z-index: 50;
+  max-width: 300px;
+  padding: 12px;
+  border-radius: 9px;
+  background: #fff1f1;
+  color: #a93838;
+  font-size: 12px;
+}
+
+@media (max-width: 500px) {
+  .auth-card {
+    padding: 26px 22px;
+  }
+
+  .auth-card h1 {
+    font-size: 24px;
+  }
+
+  .auth-signout {
+    right: 15px;
+    bottom: 15px;
+  }
+}
