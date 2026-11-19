@@ -75,6 +75,21 @@ export const api = {
       body: JSON.stringify(data)
     }),
 
+  refreshCarrierEmails: () =>
+    request("/carriers/emails/refresh-fmcsa", {
+      method: "POST", body: "{}"
+    }),
+
+  findPublicEmails: (usdot) =>
+    request(`/carriers/${encodeURIComponent(usdot)}/email-suggestions`, {
+      method: "POST", body: "{}"
+    }),
+
+  saveCarrierEmail: (usdot, email) =>
+    request(`/carriers/${encodeURIComponent(usdot)}/email`, {
+      method: "PATCH", body: JSON.stringify({ email })
+    }),
+
   // Retrieve a carrier's communication history
   activities: (usdot) =>
     request(

@@ -67,3 +67,6 @@ database/*
 *.pfx
 
 .streamlit/
+
+# Local source backups from UI redesign
+.lanecove_redesign_backup/

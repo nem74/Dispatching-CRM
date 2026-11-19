@@ -114,10 +114,10 @@ def install_first_run(app: FastAPI):
             require_origin=True
         )
 
-        username = account.username.strip()
+        username = account.username.strip().lower()
 
         if not re.fullmatch(
-            r"[A-Za-z0-9_.-]{3,40}",
+            r"[a-z0-9_.-]{3,40}",
             username
         ):
             raise HTTPException(

@@ -320,8 +320,8 @@ def install_authentication(app):
                     cur.execute("""
                         SELECT id, username, password_hash
                         FROM auth_users
-                        WHERE username = %s
-                          AND is_active = TRUE
+                        WHERE LOWER(username) = %s
+                        AND is_active = TRUE
                     """, (username,))
 
                     user = cur.fetchone()

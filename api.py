@@ -17,7 +17,8 @@ from db_access import (
     save_authority_review
 )
 
-from carrier_search import find_new_carriers
+from carrier_search import find_new_carriers, refresh_missing_fmcsa_emails
+from public_email_search import normalize_email, find_public_email_candidates
 
 
 app = FastAPI(
@@ -193,8 +194,15 @@ def get_stats():
 
                 pipeline = cursor.fetchall()
 
+                cursor.execute("""
+                    SELECT COUNT(*)::int AS total
+                    FROM outreach_activities
+                    WHERE created_at >= date_trunc('month', CURRENT_TIMESTAMP)
+                """)
+                outreach_this_month = cursor.fetchone()["total"]
+
         return {
-            "totals": dict(totals),
+            "totals": {**dict(totals), "outreach_this_month": outreach_this_month},
             "pipeline": list(pipeline)
         }
 
@@ -421,6 +429,68 @@ def discover_carriers(data: SearchRequest):
     except psycopg.Error as error:
         database_error(error)
 
+
+
+
+# ==========================================
+# BUSINESS EMAIL DISCOVERY
+# ==========================================
+
+class CarrierEmailInput(BaseModel):
+    email: str = Field(min_length=3, max_length=254)
+
+
+@app.post("/api/carriers/emails/refresh-fmcsa")
+def refresh_carrier_emails():
+    """Update up to 500 blank carrier emails from the official FMCSA API."""
+    try:
+        return refresh_missing_fmcsa_emails(limit=500)
+    except requests.RequestException as error:
+        raise HTTPException(status_code=502, detail="Unable to reach FMCSA email data") from error
+    except psycopg.Error as error:
+        database_error(error)
+
+
+@app.post("/api/carriers/{usdot}/email-suggestions")
+def suggest_carrier_emails(usdot: str):
+    """Return public web suggestions for review, never write them automatically."""
+    if not usdot.isdigit():
+        raise HTTPException(status_code=400, detail="Invalid USDOT number")
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT company, state FROM carriers WHERE usdot = %s", (usdot,))
+                carrier = cur.fetchone()
+        if not carrier:
+            raise HTTPException(status_code=404, detail="Carrier not found")
+        items = find_public_email_candidates(carrier["company"], usdot, carrier["state"])
+        return {"items": items, "note": "Unverified public web results. Open the source and confirm before saving."}
+    except ValueError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
+    except requests.RequestException as error:
+        raise HTTPException(status_code=502, detail="Public email search service unavailable") from error
+    except psycopg.Error as error:
+        database_error(error)
+
+
+@app.patch("/api/carriers/{usdot}/email")
+def save_carrier_email(usdot: str, data: CarrierEmailInput):
+    """Save an email selected and reviewed by the signed-in dispatcher."""
+    if not usdot.isdigit():
+        raise HTTPException(status_code=400, detail="Invalid USDOT number")
+    email = normalize_email(data.email)
+    if not email or email != data.email.strip().lower():
+        raise HTTPException(status_code=422, detail="Enter one valid business email address")
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("UPDATE carriers SET email = %s WHERE usdot = %s RETURNING usdot", (email, usdot))
+                found = cur.fetchone()
+        if not found:
+            raise HTTPException(status_code=404, detail="Carrier not found")
+        return {"email": email, "success": True}
+    except psycopg.Error as error:
+        database_error(error)
 
 # ==========================================
 # OUTREACH HISTORY

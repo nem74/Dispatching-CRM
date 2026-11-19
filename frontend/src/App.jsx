@@ -26,6 +26,7 @@ import {
   Search,
   ShieldCheck,
   SlidersHorizontal,
+  CircleHelp,
   Truck,
   Users,
   X
@@ -45,6 +46,9 @@ import { api } from "./api.js";
 
 import OutreachHistory from "./components/OutreachHistory";
 import ActiveClients from "./components/ActiveClients";
+import CarrierFinderPanel from "./components/CarrierFinderPanel";
+import SettingsPage from "./components/SettingsPage";
+import HelpSupportPage from "./components/HelpSupportPage";
 
 
 // ===========================================
@@ -52,41 +56,13 @@ import ActiveClients from "./components/ActiveClients";
 // ===========================================
 
 const NAV = [
-  {
-    key: "dashboard",
-    label: "Dashboard",
-    icon: LayoutDashboard
-  },
-  {
-    key: "carriers",
-    label: "Carrier Leads",
-    icon: Truck
-  },
-  {
-    key: "discover",
-    label: "Find New Carriers",
-    icon: Search
-  },
-  {
-    key: "followups",
-    label: "Follow-ups",
-    icon: CalendarClock
-  },
-  {
-    key: "outreach",
-    label: "Outreach",
-    icon: ClipboardList
-  },
-  {
-    key: "active-clients",
-    label: "Active Clients",
-    icon: Users
-  },
-  {
-    key: "verification",
-    label: "Verification",
-    icon: ShieldCheck
-  }
+  { key: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { key: "carriers", label: "Carrier Leads", icon: Truck },
+  { key: "active-clients", label: "Active Clients", icon: Users },
+  { key: "discover", label: "Find Carriers", icon: Search },
+  { key: "outreach", label: "Outreach History", icon: ClipboardList },
+  { key: "followups", label: "Follow-ups", icon: CalendarClock },
+  { key: "verification", label: "Verify Carriers", icon: ShieldCheck }
 ];
 
 const STAGES = [
@@ -330,6 +306,9 @@ function LeadTable({
                     <small>
                       {carrier.phone || "Phone not available"}
                     </small>
+                    <small>
+                      {carrier.email || "Email not available"}
+                    </small>
                   </div>
                 </div>
               </td>
@@ -390,7 +369,9 @@ function Dashboard({
   loading,
   navigate,
   onOpen,
-  onReview
+  onReview,
+  refresh,
+  notify
 }) {
   const totals = stats?.totals || {};
 
@@ -427,41 +408,38 @@ function Dashboard({
 
       <div className="stats-grid">
         <StatCard
-          label="Total leads"
+          label="Total Carriers"
           value={totals.total}
-          caption="Saved carrier records"
+          caption="Saved company records"
           icon={Truck}
           accent
         />
-
         <StatCard
-          label="Awaiting review"
-          value={totals.pending_verification}
-          caption="Authority not confirmed"
-          icon={ShieldCheck}
-        />
-
-        <StatCard
-          label="Interested"
-          value={totals.interested}
-          caption="Warm prospects"
+          label="Potential Leads"
+          value={Math.max(0, Number(totals.total || 0) - Number(totals.clients || 0))}
+          caption="Not yet active clients"
           icon={Users}
         />
-
         <StatCard
-          label="Follow-ups due"
-          value={totals.followups_due}
-          caption="Require attention"
-          icon={CalendarClock}
-        />
-
-        <StatCard
-          label="Active clients"
+          label="Active Clients"
           value={totals.clients}
-          caption="Carriers with active agreements"
+          caption="Carrier agreements"
           icon={CheckCircle2}
         />
+        <StatCard
+          label="Outreach This Month"
+          value={totals.outreach_this_month}
+          caption="Logged outreach records"
+          icon={Activity}
+        />
       </div>
+
+      <CarrierFinderPanel
+        compact
+        onOpen={onOpen}
+        onChanged={refresh}
+        notify={notify}
+      />
 
       <div className="dashboard-grid">
         <Card
@@ -1023,8 +1001,14 @@ function Outreach({
   const [followup, setFollowup] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [searchingEmail, setSearchingEmail] = useState(false);
+  const [emailCandidates, setEmailCandidates] = useState([]);
+  const [emailNotice, setEmailNotice] = useState("");
+  const [savingEmail, setSavingEmail] = useState(false);
 
   useEffect(() => {
+    setEmailCandidates([]);
+    setEmailNotice("");
     if (selected) {
       setStage(
         selected.outreach_stage || "Not contacted"
@@ -1038,6 +1022,41 @@ function Outreach({
       setContacted(false);
     }
   }, [selected]);
+
+  async function findBusinessEmail() {
+    if (!selected) return;
+    setSearchingEmail(true);
+    setEmailCandidates([]);
+    setEmailNotice("");
+    try {
+      const data = await api.findPublicEmails(selected.usdot);
+      setEmailCandidates(data.items || []);
+      if (!data.items?.length) {
+        setEmailNotice("No indexed public email found. Try contacting the carrier by phone.");
+      }
+    } catch (error) {
+      setEmailNotice(error.message);
+    } finally {
+      setSearchingEmail(false);
+    }
+  }
+
+  async function saveBusinessEmail(email) {
+    if (!selected) return;
+    setSavingEmail(true);
+    try {
+      await api.saveCarrierEmail(selected.usdot, email);
+      const updated = await api.carrier(selected.usdot);
+      setSelected(updated);
+      refresh();
+      setEmailCandidates([]);
+      notify("Carrier business email saved.");
+    } catch (error) {
+      notify(error.message, "error");
+    } finally {
+      setSavingEmail(false);
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -1150,11 +1169,51 @@ function Outreach({
                   <Phone size={15} />
                   {selected.phone || "No phone listed"}
                 </span>
+                <span>
+                  <span aria-hidden="true">✉</span>
+                  {selected.email || "No business email listed"}
+                </span>
 
                 <Badge
                   value={selected.authority_verification}
                   kind="authority"
                 />
+              </div>
+
+              <div style={{ marginBottom: 20 }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  disabled={searchingEmail || savingEmail}
+                  onClick={findBusinessEmail}
+                >
+                  {searchingEmail ? "Searching public websites..." : "Find business email online"}
+                </button>
+                {emailNotice && <p style={{ marginTop: 8 }}>{emailNotice}</p>}
+                {emailCandidates.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <p>These are unverified public search results. Check the source before saving.</p>
+                    {emailCandidates.map((item) => (
+                      <div key={item.email} style={{ padding: 8, borderBottom: "1px solid #ddd" }}>
+                        <strong>{item.email}</strong>
+                        <p style={{ overflowWrap: "anywhere" }}>
+                          Source: {item.source_title || item.source_url}
+                        </p>
+                        <p style={{ overflowWrap: "anywhere" }}>
+                          {item.source_url}
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-secondary"
+                          disabled={savingEmail}
+                          onClick={() => saveBusinessEmail(item.email)}
+                        >
+                          Save this email
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <form
@@ -1610,7 +1669,21 @@ function Discover({
   const [target, setTarget] = useState(20);
 
   const [working, setWorking] = useState(false);
+  const [refreshingEmails, setRefreshingEmails] = useState(false);
   const [result, setResult] = useState(null);
+
+  async function refreshEmails() {
+    setRefreshingEmails(true);
+    try {
+      const data = await api.refreshCarrierEmails();
+      refresh();
+      notify(`Checked ${data.checked} existing carriers; added ${data.updated} FMCSA emails.`);
+    } catch (error) {
+      notify(error.message, "error");
+    } finally {
+      setRefreshingEmails(false);
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -1655,6 +1728,16 @@ function Discover({
           </div>
 
           <h1>Find New Carriers</h1>
+
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={refreshEmails}
+            disabled={refreshingEmails || working}
+            style={{ marginTop: 10, marginBottom: 12 }}
+          >
+            {refreshingEmails ? "Checking FMCSA emails..." : "Fill missing FMCSA emails for existing leads"}
+          </button>
 
           <p>
             Discover small for-hire carrier candidates
@@ -1893,7 +1976,7 @@ export default function App() {
 
   const title =
     NAV.find((item) => item.key === page)?.label ||
-    "Dashboard";
+    (page === "settings" ? "Settings" : page === "support" ? "Help & Support" : "Dashboard");
 
   return (
     <div className="app-shell">
@@ -1923,8 +2006,8 @@ export default function App() {
           </div>
 
           <div>
-            <strong>Silvanne</strong>
-            <span>CARRIER FINDER</span>
+            <strong>Lane<span className="lc-brand-accent">Cove</span></strong>
+            <span>Dispatching CRM</span>
           </div>
         </div>
 
@@ -1968,6 +2051,11 @@ export default function App() {
 
         <div className="sidebar-spacer" />
 
+        <div className="lc-sidebar-links" aria-label="Help and settings">
+          <button type="button" className={`nav-item ${page === "settings" ? "selected" : ""}`} onClick={() => navigate("settings")}> <SlidersHorizontal size={18} /> <span>Settings</span> </button>
+          <button type="button" className={`nav-item ${page === "support" ? "selected" : ""}`} onClick={() => navigate("support")}> <CircleHelp size={18} /> <span>Help &amp; Support</span> </button>
+        </div>
+
         <div className="sidebar-bottom">
           <div className="sidebar-rule" />
 
@@ -2003,17 +2091,24 @@ export default function App() {
               <Menu size={22} />
             </button>
 
-            <span>Workspace</span>
-
-            <ChevronRight size={14} />
-
-            <strong>{title}</strong>
+            {page === "dashboard" ? (
+              <div className="lc-greeting">
+                <h2>Good {new Date().getHours() < 12 ? "Morning" : new Date().getHours() < 17 ? "Afternoon" : "Evening"}, Silvanne 👋</h2>
+                <p>Find, verify, and manage U.S. trucking carriers.</p>
+              </div>
+            ) : (
+              <>
+                <span>Workspace</span>
+                <ChevronRight size={14} />
+                <strong>{title}</strong>
+              </>
+            )}
           </div>
 
           <div className="topbar-right">
             <span className="local-pill">
               <span />
-              Local development
+              Local workspace
             </span>
 
             <span className="header-avatar">
@@ -2046,6 +2141,8 @@ export default function App() {
               navigate={navigate}
               onOpen={openCarrier}
               onReview={openReview}
+              refresh={refresh}
+              notify={notify}
             />
           )}
 
@@ -2061,10 +2158,10 @@ export default function App() {
           {/* FIND NEW CARRIERS */}
 
           {page === "discover" && (
-            <Discover
-              refresh={refresh}
+            <CarrierFinderPanel
+              onOpen={openCarrier}
+              onChanged={refresh}
               notify={notify}
-              navigate={navigate}
             />
           )}
 
@@ -2106,6 +2203,8 @@ export default function App() {
               notify={notify}
             />
           )}
+          {page === "settings" && <SettingsPage />}
+          {page === "support" && <HelpSupportPage />}
 
         </main>
 

@@ -8,7 +8,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    background: "#f5f7fb",
+    background: "var(--lc-bg)",
     padding: "24px",
     fontFamily: "Arial, sans-serif",
   },
@@ -16,9 +16,10 @@ const styles = {
   card: {
     width: "100%",
     maxWidth: "420px",
-    background: "#ffffff",
+    background: "var(--lc-panel)",
     borderRadius: "16px",
     padding: "32px",
+    color: "var(--lc-text)",
     boxShadow: "0 12px 40px rgba(0,0,0,0.08)",
   },
 
@@ -29,8 +30,10 @@ const styles = {
     marginTop: "8px",
     marginBottom: "18px",
     borderRadius: "8px",
-    border: "1px solid #d1d5db",
+    border: "1px solid var(--lc-border)",
     boxSizing: "border-box",
+    background: "var(--lc-input)",
+    color: "var(--lc-text)",
   },
 
   button: {
@@ -38,8 +41,8 @@ const styles = {
     padding: "13px",
     border: "none",
     borderRadius: "8px",
-    background: "#182b49",
-    color: "white",
+    background: "var(--lc-accent)",
+    color: "var(--lc-on-accent)",
     fontSize: "15px",
     cursor: "pointer",
   },
@@ -186,7 +189,7 @@ export default function FirstRunGate() {
           LaneCove
         </h1>
 
-        <p style={{ color: "#6b7280" }}>
+        <p style={{ color: "var(--lc-muted)" }}>
           Welcome! Create your first administrator
           account to get started.
         </p>
